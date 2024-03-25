@@ -1,0 +1,35 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #2f2f2f;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.img-container {
+    overflow: hidden;
+    border: 10px #BC8D89 solid;
+}
+
+a {
+    display: block;
+}
+
+img {
+    transition: 300ms ease;
+    transform-origin: center center;
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+img:hover {
+    transform: scale(1.1);
+}
