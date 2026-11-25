@@ -149,6 +149,18 @@ export default function App() {
     if (phase === 'enter' && shown.page !== 'home') heading.current?.focus({ preventScroll: true })
   }, [shown, phase])
 
+  useEffect(() => {
+    if (!sheet) return
+    const onKey = (event) => event.key === 'Escape' && setSheet(false)
+    const onResize = () => window.innerWidth > 1100 && setSheet(false)
+    window.addEventListener('keydown', onKey)
+    window.addEventListener('resize', onResize)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      window.removeEventListener('resize', onResize)
+    }
+  }, [sheet])
+
   const section = sectionOf(shown)
 
   useLayoutEffect(() => {
@@ -156,7 +168,7 @@ export default function App() {
       const pill = pillRef.current
       const active = navRef.current?.querySelector(`[data-id="${section}"]`)
       if (!pill) return
-      if (!active || window.innerWidth <= 860) {
+      if (!active || window.innerWidth <= 1100) {
         pill.style.opacity = '0'
         return
       }
@@ -180,12 +192,6 @@ export default function App() {
   return (
     <div className="shell">
       <header className="nav">
-        <a className={`home-link${section === 'home' ? ' is-active' : ''}`} href="/" onClick={link('/')} aria-label="Home">
-          <House size={18} strokeWidth={1.75} />
-          <span>Home</span>
-        </a>
-        <div className="nav-tools">
-        <LightSwitch dark={theme === 'dark'} onToggle={toggleTheme} />
         <button
           type="button"
           className="menu"
@@ -196,6 +202,9 @@ export default function App() {
         >
           {sheet ? <X size={22} /> : <Menu size={22} />}
         </button>
+        <span className="nav-current">{sheet ? 'Menu' : shown.page === 'home' ? 'Home' : TITLES[shown.page]}</span>
+        <div className="nav-tools">
+          <LightSwitch dark={theme === 'dark'} onToggle={toggleTheme} />
         </div>
         <nav id="site-nav" ref={navRef} className={sheet ? 'links is-open' : 'links'} aria-label="Pages">
           <span ref={pillRef} className="pill" aria-hidden="true" />
@@ -216,13 +225,13 @@ export default function App() {
 
       <main
         ref={mainRef}
-        className={`stage${shown.page === 'home' ? ' is-home' : ''} is-${phase}`}
+        inert={sheet}
+        className={`stage${shown.page === 'home' ? ' is-home' : ''} is-${phase}${sheet ? ' is-held' : ''}`}
         style={{ '--dir': dir }}
       >
         <Page shown={shown} navigate={navigate} headingRef={heading} link={link} />
       </main>
 
-      <Footer />
       <Cursor />
     </div>
   )
@@ -1041,24 +1050,3 @@ function Missing({ headingRef, link }) {
   )
 }
 
-function Footer() {
-  return (
-    <footer className="footer">
-      <p>© {new Date().getFullYear()} Deepanshu Choudhary</p>
-      <ul className="footer-links">
-        <li>
-          <a href={`mailto:${email}`} aria-label="Email">
-            <Mail size={18} strokeWidth={1.75} />
-          </a>
-        </li>
-        {socials.map((item) => (
-          <li key={item.id}>
-            <a href={item.url} target="_blank" rel="noreferrer me" aria-label={item.label}>
-              <Brand id={item.id} />
-            </a>
-          </li>
-        ))}
-      </ul>
-    </footer>
-  )
-}
