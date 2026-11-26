@@ -259,6 +259,12 @@ h2 {
   letter-spacing: -0.02em;
   line-height: 1.2;
 }
+.page h1 {
+  text-decoration: underline;
+  text-decoration-color: var(--copper);
+  text-decoration-thickness: 0.07em;
+  text-underline-offset: 0.14em;
+}
 
 
 .lead-sm { max-width: 40rem; margin: 0.9rem 0 0; font-size: 1.15rem; color: var(--soft); }
@@ -503,17 +509,36 @@ h2 {
 .cta { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: clamp(1rem, 3vh, 2rem); }
 
 /* About */
-.school { margin-top: 1.6rem; }
-.about-next { margin-top: 1.75rem; }
+.school { margin-top: 1.75rem; }
+.school h3 {
+  margin: 0 0 0.4rem;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 1.45rem;
+  letter-spacing: -0.02em;
+}
 .school-name { margin: 0; font-weight: 500; }
 .about-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-  gap: clamp(2rem, 6vw, 6rem);
-  align-items: start;
-  margin-top: 1.75rem;
+  align-items: center;
+  margin-top: 0;
 }
-.about-grid .pull { margin-top: 0; }
+.about-copy { padding-right: clamp(1.75rem, 4vw, 3.5rem); }
+.resume-col {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 1.1rem;
+  border-left: 1px solid var(--line);
+  padding-left: clamp(1.75rem, 4vw, 3.5rem);
+}
+.resume-col h2 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(1.7rem, 2.6vw, 2.15rem);
+  letter-spacing: -0.03em;
+}
 
 .resume { display: grid; justify-items: center; gap: 1.25rem; }
 .resume-paper {
@@ -923,29 +948,25 @@ h2 {
 }
 .card.is-active:hover .frame img { transform: scale(1.04); }
 .placeholder {
+  container-type: inline-size;
   position: absolute;
   inset: 0;
   display: grid;
   place-content: center;
   justify-items: center;
-  gap: 0.4rem;
   color: var(--tone);
 }
 .placeholder .mono {
+  margin: 0;
   font-family: var(--serif);
-  font-size: clamp(4rem, 9vw, 7rem);
-  line-height: 1;
+  font-weight: 400;
+  font-size: clamp(2.4rem, 12.5cqi, 5.2rem);
+  line-height: 0.95;
   letter-spacing: -0.04em;
+  text-align: center;
   transition: transform 800ms var(--ease);
 }
 .card.is-active:hover .placeholder .mono { transform: scale(1.06) rotate(-3deg); }
-.placeholder small {
-  font-family: var(--mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--soft);
-}
 .card-copy {
   display: flex;
   flex-direction: column;
@@ -1038,7 +1059,8 @@ h2 {
 .post::before {
   content: "";
   position: absolute;
-  inset: 0;
+  /* Past the border so the wash doesn't leave a hairline of the card. */
+  inset: -2px;
   background: var(--tone);
   z-index: -1;
   transform: scaleX(0);
@@ -1102,6 +1124,8 @@ h2 {
 .social-linkedin { --tone: var(--indigo); }
 .social-leetcode { --tone: var(--copper); }
 .social-mastodon { --tone: var(--leaf); }
+.social-instagram { --tone: var(--copper); }
+.social-spotify { --tone: var(--leaf); }
 .social > svg:first-child { color: var(--tone); transition: transform 350ms var(--ease); }
 .social span { display: grid; }
 .social small { font-family: var(--mono); font-size: 0.75rem; color: var(--soft); }
@@ -1188,7 +1212,9 @@ h2 {
     -webkit-mask-image: linear-gradient(to bottom, #000 60%, transparent);
   }
   .hero { margin-top: -2rem; }
-  .about-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+  .about-grid { grid-template-columns: 1fr; }
+  .about-copy { padding-right: 0; }
+  .resume-col { border-left: 0; border-top: 1px solid var(--line); margin-top: 1.5rem; padding: 1.5rem 0 0; }
   .awards { grid-template-columns: 1fr; }
   .page { justify-content: flex-start; }
   .social-grid { grid-template-columns: 1fr; }

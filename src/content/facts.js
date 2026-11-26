@@ -9,6 +9,13 @@ export const socials = [
   { id: 'linkedin', label: 'LinkedIn', note: 'Work history', url: 'https://www.linkedin.com/in/h4636oh' },
   { id: 'leetcode', label: 'LeetCode', note: 'Problem solving', url: 'https://leetcode.com/u/h4636oh' },
   { id: 'mastodon', label: 'Mastodon', note: 'Posts on Fosstodon', url: 'https://fosstodon.org/@h4636oh' },
+  { id: 'instagram', label: 'Instagram', note: 'the.pan.shu', url: 'https://instagram.com/the.pan.shu' },
+  {
+    id: 'spotify',
+    label: 'Spotify',
+    note: 'What I listen to',
+    url: 'https://open.spotify.com/user/312woejjtlbmn255hengtmmoalna?si=4df089f9aeb945d3',
+  },
 ]
 
 export const about =

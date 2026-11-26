@@ -30,25 +30,25 @@ import { ORDER, hrefFor, parsePath, sameRoute, sectionOf } from './route'
 
 const NAV = [
   ['home', 'Home', House],
-  ['about', 'About me', User],
-  ['skills', 'What I use', Wrench],
-  ['career', 'Where I’ve worked', Briefcase],
-  ['projects', 'What I’ve built', FolderGit2],
-  ['achievements', 'What I’ve won', Trophy],
-  ['blogs', 'What I write', PenLine],
-  ['contact', 'Say hello', Mail],
+  ['about', 'About Me', User],
+  ['skills', 'Skills', Wrench],
+  ['career', 'Career', Briefcase],
+  ['projects', 'Projects', FolderGit2],
+  ['achievements', 'Achievements', Trophy],
+  ['blogs', 'Blogs', PenLine],
+  ['contact', 'Contact Me', Mail],
 ]
 
 const TITLES = {
   home: 'Deepanshu Choudhary',
-  about: 'About',
+  about: 'About Me',
   skills: 'Skills',
   career: 'Career',
   projects: 'Projects',
   achievements: 'Achievements',
   blogs: 'Blogs',
   blog: 'Blog',
-  contact: 'Contact',
+  contact: 'Contact Me',
   missing: 'Not found',
 }
 
@@ -529,7 +529,7 @@ function Home({ link }) {
           ))}
         </h1>
         <p className="hero-line rise" style={{ '--d': 5 }}>
-          I build systems and apps
+          I build things
         </p>
         <p className="hero-sub rise" style={{ '--d': 6 }}>
           Right now I&rsquo;m freelancing on a Flutter app and its FastAPI backend, contributing to Omarchy, and
@@ -550,31 +550,28 @@ function Home({ link }) {
   )
 }
 
-function About({ headingRef, link }) {
+function About({ headingRef }) {
   const school = facts.school
   return (
     <article className="page">
-      <Title headingRef={headingRef}>Let me introduce myself.</Title>
       <div className="about-grid">
-        <div>
+        <div className="about-copy">
+          <Title headingRef={headingRef}>Let me introduce myself.</Title>
           <p className="prose pull">
             <span className="mark">{about}</span>
           </p>
-          <div className="school">
-            <p className="eyebrow">Where I study</p>
+          <section className="school">
+            <h3>My studies</h3>
             <p className="school-name">{school.title}</p>
             <p className="meta">
               {school.place} · {school.detail} · {span(school)}
             </p>
-          </div>
-          <p className="about-next">
-            <a className="text-link" href="/skills" onClick={link('/skills')}>
-              See what I work with
-              <ArrowRight size={16} aria-hidden="true" />
-            </a>
-          </p>
+          </section>
         </div>
-        <Resume />
+        <div className="resume-col">
+          <h2>Here is my resume</h2>
+          <Resume />
+        </div>
       </div>
     </article>
   )
@@ -780,35 +777,88 @@ function Projects({ headingRef, id, onSlide }) {
   const found = projectOrder.indexOf(id)
   const index = found >= 0 ? found : 0
   const total = projectOrder.length
+  const loop = total > 1
+  const copies = 7
+  const origin = loop ? Math.floor(copies / 2) * total : 0
+  const [pos, setPos] = useState(origin + index)
+  const posRef = useRef(pos)
+  const goalRef = useRef(index)
+  const pending = useRef(0)
+  const animating = useRef(false)
+  const trackRef = useRef(null)
   const [moving, setMoving] = useState(false)
   const touch = useRef(null)
   const moveTimer = useRef(0)
 
-  function show(next) {
-    const target = (next + total) % total
-    if (target === index) return
+  function place(next, animate) {
+    posRef.current = next
+    const track = trackRef.current
+    if (track && !animate) {
+      track.style.transition = 'none'
+      track.style.setProperty('--i', String(next))
+      void track.offsetWidth
+      track.style.transition = ''
+    }
+    setPos(next)
+  }
+
+  function pump() {
+    if (!loop || animating.current || pending.current === 0) return
+    const direction = pending.current > 0 ? 1 : -1
+    pending.current -= direction
+    const logical = (goalRef.current + direction + total) % total
+    goalRef.current = logical
+    onSlide(hrefFor({ page: 'projects', id: projectOrder[logical] }))
+    let next = posRef.current + direction
+    if (next < total || next >= copies * total - total) {
+      const shifted = posRef.current - direction * total
+      place(shifted, false)
+      next = shifted + direction
+    }
+    animating.current = true
+    place(next, true)
     window.clearTimeout(moveTimer.current)
     setMoving(true)
     moveTimer.current = window.setTimeout(() => setMoving(false), 420)
-    onSlide(hrefFor({ page: 'projects', id: projectOrder[target] }))
   }
 
-  const showRef = useRef(show)
+  function step(direction) {
+    pending.current += direction
+    pump()
+  }
+
+  function goTo(target) {
+    const delta = ((target % total) + total - goalRef.current) % total
+    if (delta === 0) return
+    const direction = delta <= total / 2 ? 1 : -1
+    pending.current += direction * (direction === 1 ? delta : total - delta)
+    pump()
+  }
+
   useEffect(() => {
-    showRef.current = show
+    if (index === goalRef.current) return
+    goalRef.current = index
+    pending.current = 0
+    animating.current = false
+    place(origin + index, false)
+  }, [index, origin])
+
+  const stepRef = useRef(step)
+  useEffect(() => {
+    stepRef.current = step
   })
 
   useEffect(() => {
     function onKey(event) {
       if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return
-      if (event.key === 'ArrowRight') showRef.current(index + 1)
-      if (event.key === 'ArrowLeft') showRef.current(index - 1)
+      if (event.key === 'ArrowRight') stepRef.current(1)
+      if (event.key === 'ArrowLeft') stepRef.current(-1)
     }
     window.addEventListener('keydown', onKey)
     return () => {
       window.removeEventListener('keydown', onKey)
     }
-  }, [index])
+  }, [])
 
   useEffect(() => () => window.clearTimeout(moveTimer.current), [])
 
@@ -820,7 +870,7 @@ function Projects({ headingRef, id, onSlide }) {
     if (touch.current === null) return
     const dx = event.changedTouches[0].clientX - touch.current
     touch.current = null
-    if (Math.abs(dx) > 50) show(index + (dx < 0 ? 1 : -1))
+    if (Math.abs(dx) > 50) step(dx < 0 ? 1 : -1)
   }
 
   return (
@@ -833,10 +883,10 @@ function Projects({ headingRef, id, onSlide }) {
           <p className="counter" aria-live="polite">
             <strong>{String(index + 1).padStart(2, '0')}</strong> / {String(total).padStart(2, '0')}
           </p>
-          <button type="button" className="icon-button" aria-label="Previous project" onClick={() => show(index - 1)}>
+          <button type="button" className="icon-button" aria-label="Previous project" onClick={() => step(-1)}>
             <ArrowLeft size={18} />
           </button>
-          <button type="button" className="icon-button" aria-label="Next project" onClick={() => show(index + 1)}>
+          <button type="button" className="icon-button" aria-label="Next project" onClick={() => step(1)}>
             <ArrowRight size={18} />
           </button>
         </div>
@@ -848,14 +898,28 @@ function Projects({ headingRef, id, onSlide }) {
         onTouchEnd={onTouchEnd}
         aria-roledescription="carousel"
       >
-        <ol className="track" style={{ '--i': index }}>
-          {projectOrder.map((key, slide) => {
+        <ol
+          ref={trackRef}
+          className="track"
+          style={{ '--i': pos }}
+          onTransitionEnd={(event) => {
+            if (!loop || event.propertyName !== 'transform' || event.target !== event.currentTarget) return
+            if (!animating.current) return
+            animating.current = false
+            const landed = posRef.current
+            const normalized = origin + ((landed % total) + total) % total
+            if (normalized !== landed) place(normalized, false)
+            pump()
+          }}
+        >
+          {(loop ? Array.from({ length: copies }, () => projectOrder).flat() : projectOrder).map((key, slot) => {
+            const slide = loop ? slot % total : slot
             const fact = facts[key]
             const image = projectImages[key]
-            const active = slide === index
+            const active = slot === pos
             return (
               <li
-                key={key}
+                key={`${key}-${slot}`}
                 className={`card tone-${TONES[slide % TONES.length]}${active ? ' is-active' : ''}`}
                 aria-roledescription="slide"
                 aria-label={`${slide + 1} of ${total}: ${fact.title}`}
@@ -863,15 +927,14 @@ function Projects({ headingRef, id, onSlide }) {
                 onPointerMove={active ? track : undefined}
                 onPointerLeave={active ? untrack : undefined}
                 inert={active ? undefined : true}
-                onClick={active ? undefined : () => show(slide)}
+                onClick={active ? undefined : () => goTo(slide)}
               >
                 <div className="frame">
                   {image ? (
                     <img src={image} alt={`${fact.title} screenshot`} loading="lazy" />
                   ) : (
                     <div className="placeholder">
-                      <span className="mono">{fact.title.slice(0, 2)}</span>
-                      <small>Screenshot coming soon</small>
+                      <h2 className="mono">{fact.title}</h2>
                     </div>
                   )}
                 </div>
@@ -879,7 +942,7 @@ function Projects({ headingRef, id, onSlide }) {
                   <p className="place">
                     {fact.place} · {fact.detail}
                   </p>
-                  <h2>{fact.title}</h2>
+                  {image ? <h2>{fact.title}</h2> : null}
                   <p className="body">{projectSentences[key]}</p>
                   {fact.tech.length ? (
                     <ul className="tags">
