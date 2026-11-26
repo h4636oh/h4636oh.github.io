@@ -1,9 +1,10 @@
-import { copyFileSync, writeFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vite'
+import { parsePath } from './src/route.js'
 
 async function loadSite() {
   return import(pathToFileURL(resolve('src/content/site.js')).href)
@@ -14,6 +15,28 @@ function escapeAttr(value) {
     .replaceAll('&', '&amp;')
     .replaceAll('"', '&quot;')
     .replaceAll('<', '&lt;')
+}
+
+function setMeta(html, attr, key, content) {
+  const re = new RegExp(`(<meta[^>]*${attr}="${key}"[^>]*content=")([^"]*)(")`, 'i')
+  if (re.test(html)) return html.replace(re, `$1${escapeAttr(content)}$3`)
+  return html
+}
+
+function withPageSeo(html, meta, site) {
+  const image = `${site.url}${site.ogImage}`
+  let out = html.replace(/<title>[^<]*<\/title>/i, `<title>${escapeAttr(meta.title)}</title>`)
+  out = setMeta(out, 'name', 'description', meta.description)
+  out = setMeta(out, 'property', 'og:title', meta.title)
+  out = setMeta(out, 'property', 'og:description', meta.description)
+  out = setMeta(out, 'property', 'og:url', meta.url)
+  out = setMeta(out, 'property', 'og:type', meta.type)
+  out = setMeta(out, 'property', 'og:image', image)
+  out = setMeta(out, 'name', 'twitter:title', meta.title)
+  out = setMeta(out, 'name', 'twitter:description', meta.description)
+  out = setMeta(out, 'name', 'twitter:image', image)
+  out = out.replace(/(<link[^>]*rel="canonical"[^>]*href=")([^"]*)(")/i, `$1${escapeAttr(meta.url)}$3`)
+  return out
 }
 
 function siteSeo() {
@@ -57,12 +80,26 @@ function siteSeo() {
         .replace('<!--site-crawler-->', `<noscript>${crawlerHtml()}</noscript>`)
     },
     async closeBundle() {
-      const { site, robotsTxt, sitemapXml } = await get()
+      const { site, seoFor, sitemapPaths, robotsTxt, sitemapXml } = await get()
+      const homeHtml = readFileSync('dist/index.html', 'utf8')
       copyFileSync('dist/index.html', 'dist/404.html')
       writeFileSync('dist/.nojekyll', '')
       writeFileSync('dist/CNAME', `${site.domain}\n`)
       writeFileSync('dist/robots.txt', robotsTxt())
       writeFileSync('dist/sitemap.xml', sitemapXml())
+
+      // Real files per route so GitHub Pages returns 200 (not soft-404) with page meta.
+      for (const path of sitemapPaths()) {
+        if (path === '/') continue
+        const meta = seoFor(parsePath(path))
+        const html = withPageSeo(homeHtml, meta, site)
+        const file = `dist${path}.html`
+        mkdirSync(dirname(file), { recursive: true })
+        writeFileSync(file, html)
+        const pretty = `dist${path}/index.html`
+        mkdirSync(dirname(pretty), { recursive: true })
+        writeFileSync(pretty, html)
+      }
     },
   }
 }
