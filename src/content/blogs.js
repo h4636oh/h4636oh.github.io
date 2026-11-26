@@ -2,7 +2,7 @@ export const blogs = [
   {
     slug: 'pruning',
     factId: 'lth',
-    tone: 'leaf',
+    tone: 'copper',
     title: 'Pruning a few-shot network',
     summary: 'Lottery tickets survive transfer from Mini-ImageNet to CUB.',
     source: 'https://github.com/h4636oh/LTH-on-FSL',
@@ -16,7 +16,7 @@ export const blogs = [
   {
     slug: 'touchpad',
     factId: 'omarchy',
-    tone: 'indigo',
+    tone: 'copper',
     title: 'A touchpad toggle for Hyprland',
     summary: 'A Bash utility for Omarchy, reviewed by its maintainers.',
     source: 'https://github.com/omacom/omarchy/pull/3075',

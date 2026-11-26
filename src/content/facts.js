@@ -39,7 +39,7 @@ export const skills = [
   {
     id: 'frameworks',
     label: 'Frameworks & tools',
-    mark: 'indigo',
+    mark: 'copper',
     items: [
       { name: 'Flutter', icon: 'flutter' },
       { name: 'FastAPI', icon: 'fastapi' },
@@ -54,7 +54,7 @@ export const skills = [
   {
     id: 'infra',
     label: 'Data & infrastructure',
-    mark: 'leaf',
+    mark: 'copper',
     items: [
       { name: 'AWS', icon: 'aws' },
       { name: 'MongoDB', icon: 'mongodb' },

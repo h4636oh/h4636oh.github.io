@@ -54,9 +54,36 @@ const TITLES = {
 
 const EXIT_MS = 260
 
-const STARS = [
-  [33, 10, 0], [38, 16, 1.2], [44, 9, 0.6], [55, 12, 2], [60, 9, 0.3], [64, 17, 1.6], [69, 11, 2.4], [52, 8, 0.9],
-]
+const SCENE_STEPS = [64, 640, 1280, 1920, 2880]
+
+function SceneImg({ kind, className }) {
+  const [step, setStep] = useState(0)
+  const src = `/desk-${kind}-${SCENE_STEPS[step]}.webp`
+
+  useEffect(() => {
+    if (step >= SCENE_STEPS.length - 1) return
+    let alive = true
+    const next = new Image()
+    next.src = `/desk-${kind}-${SCENE_STEPS[step + 1]}.webp`
+    next.onload = () => {
+      if (alive) setStep((n) => n + 1)
+    }
+    return () => {
+      alive = false
+      next.onload = null
+    }
+  }, [kind, step])
+
+  return (
+    <img
+      className={`${className}${step === 0 ? ' is-soft' : ''}`}
+      src={src}
+      alt=""
+      decoding="async"
+      fetchPriority={kind === 'day' ? 'high' : 'low'}
+    />
+  )
+}
 
 function reduceMotion() {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -85,7 +112,7 @@ export default function App() {
     const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'
     const apply = () => {
       document.documentElement.dataset.theme = next
-      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', next === 'dark' ? '#0b1121' : '#f3eee4')
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', next === 'dark' ? '#262223' : '#fcedda')
       localStorage.setItem('theme', next)
       setTheme(next)
     }
@@ -191,7 +218,7 @@ export default function App() {
 
   return (
     <div className="shell">
-      <header className="nav">
+      <header className={`nav${shown.page === 'home' ? ' is-home' : ''}`}>
         <button
           type="button"
           className="menu"
@@ -501,17 +528,8 @@ function Home({ link }) {
   return (
     <div className="home">
       <div className="scene" aria-hidden="true">
-        <img className="scene-day" src="/desk-day-1920.webp" srcSet="/desk-day-1280.webp 1280w, /desk-day-1920.webp 1920w, /desk-day-2880.webp 2880w" sizes="(max-width: 860px) 100vw, 160svh" alt="" />
-        <img className="scene-night" src="/desk-night-1920.webp" srcSet="/desk-night-1280.webp 1280w, /desk-night-1920.webp 1920w, /desk-night-2880.webp 2880w" sizes="(max-width: 860px) 100vw, 160svh" alt="" />
-        <span className="sunbeam" />
-        <span className="screen-glow" />
-        <span className="lamp-glow" />
-        <span className="lamp-pool" />
-        <span className="stars">
-          {STARS.map(([x, y, delay]) => (
-            <i key={`${x}-${y}`} style={{ left: `${x}%`, top: `${y}%`, animationDelay: `${delay}s` }} />
-          ))}
-        </span>
+        <SceneImg kind="day" className="scene-day" />
+        <SceneImg kind="night" className="scene-night" />
       </div>
       <section className="hero">
         <p className="hero-tag rise" style={{ '--d': 0 }}>
@@ -771,7 +789,7 @@ function Career({ headingRef }) {
   )
 }
 
-const TONES = ['indigo', 'copper', 'leaf']
+const TONES = ['copper']
 
 function Projects({ headingRef, id, onSlide }) {
   const found = projectOrder.indexOf(id)
