@@ -22,11 +22,29 @@ import {
   Wrench,
   X,
 } from 'lucide-react'
-import { about, email, facts, skills, socials, span, spotifyProfile } from './content/facts'
-import { achievements, career, projectImages, projectOrder, projectSentences } from './content/copy'
-import { blogs } from './content/blogs'
+import { Mark } from './Mark.jsx'
+import {
+  about,
+  achievements,
+  blogs,
+  career,
+  email,
+  facts,
+  home as homeCopy,
+  pages,
+  projectImages,
+  projectOrder,
+  projectSentences,
+  site,
+  skills,
+  socials,
+  span,
+  spotifyProfile,
+} from './content/site'
 import { Brand, Tech } from './icons'
+import { isSlowNet, sceneCap } from './net'
 import { ORDER, hrefFor, parsePath, sameRoute, sectionOf } from './route'
+import { applySeo } from './seo'
 
 const NAV = [
   ['home', 'Home', House],
@@ -39,29 +57,17 @@ const NAV = [
   ['contact', 'Contact Me', Mail],
 ]
 
-const TITLES = {
-  home: 'Deepanshu Choudhary',
-  about: 'About Me',
-  skills: 'Skills',
-  career: 'Career',
-  projects: 'Projects',
-  achievements: 'Achievements',
-  blogs: 'Blogs',
-  blog: 'Blog',
-  contact: 'Contact Me',
-  missing: 'Not found',
-}
-
 const EXIT_MS = 260
 
 const SCENE_STEPS = [64, 640, 1280, 1920, 2880]
 
-function SceneImg({ kind, className }) {
+function SceneImg({ kind, className, active = true }) {
   const [step, setStep] = useState(0)
-  const src = `/desk-${kind}-${SCENE_STEPS[step]}.webp`
+  const cap = sceneCap()
+  const src = `/desk-${kind}-${SCENE_STEPS[Math.min(step, cap)]}.webp`
 
   useEffect(() => {
-    if (step >= SCENE_STEPS.length - 1) return
+    if (!active || step >= cap) return
     let alive = true
     const next = new Image()
     next.src = `/desk-${kind}-${SCENE_STEPS[step + 1]}.webp`
@@ -72,7 +78,7 @@ function SceneImg({ kind, className }) {
       alive = false
       next.onload = null
     }
-  }, [kind, step])
+  }, [kind, step, cap, active])
 
   return (
     <img
@@ -80,7 +86,8 @@ function SceneImg({ kind, className }) {
       src={src}
       alt=""
       decoding="async"
-      fetchPriority={kind === 'day' ? 'high' : 'low'}
+      fetchPriority={kind === 'day' && active ? 'high' : 'low'}
+      loading={kind === 'day' ? 'eager' : 'lazy'}
     />
   )
 }
@@ -112,7 +119,10 @@ export default function App() {
     const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'
     const apply = () => {
       document.documentElement.dataset.theme = next
-      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', next === 'dark' ? '#262223' : '#fcedda')
+      document.querySelector('meta[name="theme-color"]')?.setAttribute(
+        'content',
+        next === 'dark' ? site.themeColor.dark : site.themeColor.light,
+      )
       localStorage.setItem('theme', next)
       setTheme(next)
     }
@@ -171,8 +181,7 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    const title = TITLES[shown.page]
-    document.title = shown.page === 'home' ? title : `${title} · Deepanshu Choudhary`
+    applySeo(shown)
     if (phase === 'enter' && shown.page !== 'home') heading.current?.focus({ preventScroll: true })
   }, [shown, phase])
 
@@ -219,6 +228,7 @@ export default function App() {
   return (
     <div className="shell">
       <header className={`nav${shown.page === 'home' ? ' is-home' : ''}`}>
+        <Mark className="nav-mark" />
         <button
           type="button"
           className="menu"
@@ -229,7 +239,9 @@ export default function App() {
         >
           {sheet ? <X size={22} /> : <Menu size={22} />}
         </button>
-        <span className="nav-current">{sheet ? 'Menu' : shown.page === 'home' ? 'Home' : TITLES[shown.page]}</span>
+        <span className="nav-current">
+          {sheet ? 'Menu' : shown.page === 'home' ? 'Home' : pages[shown.page]?.title || 'Menu'}
+        </span>
         <div className="nav-tools">
           <LightSwitch dark={theme === 'dark'} onToggle={toggleTheme} />
         </div>
@@ -613,11 +625,20 @@ function pickPlaylist(list, avoid) {
 }
 
 function Home({ link }) {
-  const name = ['Deepanshu', 'Choudhary']
+  const name = [site.givenName, site.familyName]
   let letter = 0
   const [playlist, setPlaylist] = useState(null)
+  const [theme, setTheme] = useState(() => document.documentElement.dataset.theme || 'light')
 
   useEffect(() => {
+    const sync = () => setTheme(document.documentElement.dataset.theme || 'light')
+    const obs = new MutationObserver(sync)
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
+    return () => obs.disconnect()
+  }, [])
+
+  useEffect(() => {
+    if (isSlowNet()) return
     let alive = true
     let timer = 0
     let pool = []
@@ -642,12 +663,12 @@ function Home({ link }) {
   return (
     <div className="home">
       <div className="scene" aria-hidden="true">
-        <SceneImg kind="day" className="scene-day" />
-        <SceneImg kind="night" className="scene-night" />
+        <SceneImg kind="day" className="scene-day" active={theme !== 'dark'} />
+        <SceneImg kind="night" className="scene-night" active={theme === 'dark'} />
       </div>
       <section className="hero">
         <p className="hero-tag rise" style={{ '--d': 0 }}>
-          Hey, welcome to my desk. I&rsquo;m
+          {homeCopy.tag}
         </p>
         <h1 className="hero-name" aria-label={name.join(' ')}>
           {name.map((word) => (
@@ -661,20 +682,19 @@ function Home({ link }) {
           ))}
         </h1>
         <p className="hero-line rise" style={{ '--d': 5 }}>
-          I build things
+          {homeCopy.line}
         </p>
         <p className="hero-sub rise" style={{ '--d': 6 }}>
-          Right now I&rsquo;m freelancing on a Flutter app and its FastAPI backend, contributing to Omarchy, and
-          finishing my CS degree at IIIT Pune. Take a look around.
+          {homeCopy.sub}
         </p>
         <div className="cta rise" style={{ '--d': 7 }}>
           <a className="button primary" href="/projects" onClick={link('/projects')}>
-            See what I&rsquo;ve built
+            {homeCopy.ctaPrimary}
             <ArrowRight size={18} aria-hidden="true" />
           </a>
           <a className="button ghost" href="/contact" onClick={link('/contact')}>
             <Mail size={18} aria-hidden="true" />
-            Say hello
+            {homeCopy.ctaSecondary}
           </a>
         </div>
       </section>
@@ -725,8 +745,8 @@ function About({ headingRef }) {
   )
 }
 
-const RESUME = '/resume.pdf'
-const RESUME_NAME = 'Deepanshu_Choudhary_Resume.pdf'
+const RESUME = site.resumePath
+const RESUME_NAME = site.resumeFile
 
 function Resume() {
   const [open, setOpen] = useState(false)

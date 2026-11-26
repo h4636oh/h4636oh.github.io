@@ -8,3 +8,9 @@ createRoot(document.getElementById('root')).render(
     <App />
   </StrictMode>,
 )
+
+// Drop the boot overlay as soon as the app has painted.
+requestAnimationFrame(() => {
+  document.documentElement.classList.add('is-ready')
+  document.getElementById('boot')?.remove()
+})
