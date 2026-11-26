@@ -22,7 +22,7 @@ import {
   Wrench,
   X,
 } from 'lucide-react'
-import { about, email, facts, skills, socials, span } from './content/facts'
+import { about, email, facts, skills, socials, span, spotifyProfile } from './content/facts'
 import { achievements, career, projectImages, projectOrder, projectSentences } from './content/copy'
 import { blogs } from './content/blogs'
 import { Brand, Tech } from './icons'
@@ -275,23 +275,65 @@ const CURSOR_STATES = [
 function Cursor() {
   const dotRef = useRef(null)
   const ringRef = useRef(null)
+  const trailRef = useRef(null)
 
   useEffect(() => {
     if (!window.matchMedia('(pointer: fine)').matches) return
     const root = document.documentElement
     const dot = dotRef.current
     const ring = ringRef.current
+    const canvas = trailRef.current
+    const ctx = canvas.getContext('2d')
     const at = { x: -100, y: -100 }
     const lag = { x: -100, y: -100 }
+    const points = []
     let frame = 0
     root.classList.add('has-cursor')
 
-    function loop() {
+    function size() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2)
+      canvas.width = Math.floor(window.innerWidth * dpr)
+      canvas.height = Math.floor(window.innerHeight * dpr)
+      canvas.style.width = `${window.innerWidth}px`
+      canvas.style.height = `${window.innerHeight}px`
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    }
+    size()
+
+    function marker() {
+      return getComputedStyle(root).getPropertyValue('--ink').trim() || '#262223'
+    }
+
+    function loop(now) {
       const ease = reduceMotion() ? 1 : 0.2
       lag.x += (at.x - lag.x) * ease
       lag.y += (at.y - lag.y) * ease
       ring.style.transform = `translate3d(${lag.x}px, ${lag.y}px, 0)`
-      frame = Math.abs(at.x - lag.x) + Math.abs(at.y - lag.y) > 0.1 ? requestAnimationFrame(loop) : 0
+
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight)
+      if (!reduceMotion()) {
+        while (points.length && now - points[0].t > 420) points.shift()
+        if (points.length > 1) {
+          ctx.globalAlpha = 1
+          ctx.strokeStyle = marker()
+          ctx.lineWidth = 10
+          ctx.lineCap = 'round'
+          ctx.lineJoin = 'round'
+          ctx.beginPath()
+          ctx.moveTo(points[0].x, points[0].y)
+          for (let i = 1; i < points.length - 1; i++) {
+            const midX = (points[i].x + points[i + 1].x) / 2
+            const midY = (points[i].y + points[i + 1].y) / 2
+            ctx.quadraticCurveTo(points[i].x, points[i].y, midX, midY)
+          }
+          const last = points[points.length - 1]
+          ctx.lineTo(last.x, last.y)
+          ctx.stroke()
+        }
+      }
+
+      const moving = Math.abs(at.x - lag.x) + Math.abs(at.y - lag.y) > 0.1 || points.length > 1
+      frame = moving ? requestAnimationFrame(loop) : 0
     }
 
     function onMove(event) {
@@ -304,6 +346,15 @@ function Cursor() {
       dot.dataset.state = state
       ring.classList.add('is-on')
       dot.classList.add('is-on')
+
+      if (!reduceMotion()) {
+        const prev = points[points.length - 1]
+        if (!prev || Math.hypot(at.x - prev.x, at.y - prev.y) > 1.5) {
+          points.push({ x: at.x, y: at.y, t: performance.now() })
+          if (points.length > 64) points.shift()
+        }
+      }
+
       if (!frame) frame = requestAnimationFrame(loop)
     }
     const onDown = () => ring.classList.add('is-down')
@@ -311,11 +362,14 @@ function Cursor() {
     function onLeave() {
       ring.classList.remove('is-on')
       dot.classList.remove('is-on')
+      points.length = 0
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight)
     }
 
     window.addEventListener('pointermove', onMove, { passive: true })
     window.addEventListener('pointerdown', onDown)
     window.addEventListener('pointerup', onUp)
+    window.addEventListener('resize', size)
     document.addEventListener('mouseleave', onLeave)
     return () => {
       cancelAnimationFrame(frame)
@@ -323,12 +377,14 @@ function Cursor() {
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('pointerdown', onDown)
       window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('resize', size)
       document.removeEventListener('mouseleave', onLeave)
     }
   }, [])
 
   return (
     <>
+      <canvas ref={trailRef} className="cursor-trail" aria-hidden="true" />
       <span ref={ringRef} className="cursor-ring" aria-hidden="true">
         <ArrowUpRight size={16} strokeWidth={2} />
       </span>
@@ -521,9 +577,67 @@ function Title({ headingRef, children }) {
   )
 }
 
+// shortcut: playlists come through jina.ai reader (CORS), swap if Spotify blocks it
+async function fetchSpotifyPlaylists(profileUrl) {
+  const key = `spotify-pls:${profileUrl}`
+  try {
+    const hit = sessionStorage.getItem(key)
+    if (hit) return JSON.parse(hit)
+  } catch { /* ignore */ }
+
+  const res = await fetch(`https://r.jina.ai/${profileUrl}`)
+  if (!res.ok) throw new Error('spotify profile fetch failed')
+  const text = await res.text()
+  const seen = new Set()
+  const list = []
+  const re =
+    /!\[[^\]]*\]\((https:\/\/[^)]+)\)\s*\n+\[([^\]]+)\]\((https:\/\/open\.spotify\.com\/playlist\/[A-Za-z0-9]+)\)/g
+  for (const match of text.matchAll(re)) {
+    const url = match[3]
+    if (seen.has(url)) continue
+    seen.add(url)
+    list.push({ cover: match[1], title: match[2].trim(), url })
+  }
+  if (!list.length) throw new Error('no playlists parsed')
+  try {
+    sessionStorage.setItem(key, JSON.stringify(list))
+  } catch { /* ignore */ }
+  return list
+}
+
+function pickPlaylist(list, avoid) {
+  if (list.length === 1) return list[0]
+  let next = list[Math.floor(Math.random() * list.length)]
+  while (avoid && next.url === avoid.url) next = list[Math.floor(Math.random() * list.length)]
+  return next
+}
+
 function Home({ link }) {
   const name = ['Deepanshu', 'Choudhary']
   let letter = 0
+  const [playlist, setPlaylist] = useState(null)
+
+  useEffect(() => {
+    let alive = true
+    let timer = 0
+    let pool = []
+
+    fetchSpotifyPlaylists(spotifyProfile)
+      .then((list) => {
+        if (!alive || !list.length) return
+        pool = list
+        setPlaylist(pickPlaylist(list))
+        timer = window.setInterval(() => {
+          setPlaylist((current) => pickPlaylist(pool, current))
+        }, 14000)
+      })
+      .catch(() => {})
+
+    return () => {
+      alive = false
+      window.clearInterval(timer)
+    }
+  }, [])
 
   return (
     <div className="home">
@@ -564,6 +678,22 @@ function Home({ link }) {
           </a>
         </div>
       </section>
+      {playlist && (
+        <a
+          className="spotify-art rise"
+          style={{ '--d': 8 }}
+          href={playlist.url}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={`Listen to ${playlist.title} on Spotify`}
+        >
+          <img key={playlist.url} src={playlist.cover} alt="" width={640} height={640} decoding="async" />
+          <span className="spotify-art-meta">
+            <Brand id="spotify" size={16} />
+            {playlist.title}
+          </span>
+        </a>
+      )}
     </div>
   )
 }

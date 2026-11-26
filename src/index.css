@@ -470,6 +470,52 @@ h2 {
 }
 .hero-sub { max-width: 32rem; margin: 0.8rem 0 0; color: var(--soft); font-size: 1.05rem; }
 .cta { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: clamp(1rem, 3vh, 2rem); }
+.spotify-art {
+  position: absolute;
+  right: calc(var(--gutter) + env(safe-area-inset-right) + 0.5rem);
+  bottom: 0;
+  width: min(200px, 26vw);
+  z-index: 2;
+  text-decoration: none;
+  border-radius: 10px 10px 0 0;
+  overflow: hidden;
+  transform: translateY(62%) rotate(5deg);
+  transform-origin: 50% 0%;
+  box-shadow:
+    0 18px 40px -20px color-mix(in srgb, var(--ink) 65%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--ink) 10%, transparent);
+  transition: transform 500ms var(--ease), box-shadow 500ms var(--ease);
+}
+.spotify-art img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  animation: spotify-swap 500ms var(--ease);
+}
+@keyframes spotify-swap {
+  from { opacity: 0; transform: scale(1.04); }
+  to { opacity: 1; transform: none; }
+}
+.spotify-art-meta {
+  position: absolute;
+  inset: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.65rem 0.7rem 1.5rem;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: #fff;
+  background: linear-gradient(to bottom, rgb(0 0 0 / 70%), transparent);
+}
+.spotify-art-meta svg { flex: none; color: #1ed760; }
+.spotify-art:hover {
+  transform: translateY(28%) rotate(2deg);
+  box-shadow:
+    0 28px 48px -18px color-mix(in srgb, var(--ink) 70%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--ink) 10%, transparent);
+}
 
 /* About */
 .school { margin-top: 1.75rem; }
@@ -1069,7 +1115,7 @@ h2 {
   transition: background-size 500ms var(--ease), color 200ms ease;
 }
 .mail-link:hover { background-size: 100% 3px; color: var(--copper); }
-.social-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.9rem; margin: 1rem 0 0; padding: 0; list-style: none; }
+.social-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.9rem; margin: 1rem 0 0; padding: 0; list-style: none; }
 .social {
   position: relative;
   display: flex;
@@ -1083,12 +1129,13 @@ h2 {
   transform: translate(calc(var(--rx, 0) * 8px), calc(var(--ry, 0) * 8px));
   transition: transform 350ms var(--ease), border-color 200ms ease;
 }
-.social-github,
-.social-linkedin,
-.social-leetcode,
-.social-mastodon,
-.social-instagram,
-.social-spotify { --tone: var(--copper); }
+.social-github { --tone: #181717; }
+:root[data-theme="dark"] .social-github { --tone: #f0f6fc; }
+.social-linkedin { --tone: #0a66c2; }
+.social-leetcode { --tone: #ffa116; }
+.social-mastodon { --tone: #6364ff; }
+.social-instagram { --tone: #ff0069; }
+.social-spotify { --tone: #1ed760; }
 .social > svg:first-child { color: var(--tone); transition: transform 350ms var(--ease); }
 .social span { display: grid; }
 .social small { font-family: var(--mono); font-size: 0.75rem; color: var(--soft); }
@@ -1175,6 +1222,15 @@ h2 {
     -webkit-mask-image: linear-gradient(to bottom, #000 60%, transparent);
   }
   .hero { margin-top: -2rem; }
+  .home { overflow: hidden; }
+  .spotify-art {
+    position: absolute;
+    right: 1.25rem;
+    bottom: 0;
+    width: min(160px, 42vw);
+    transform: translateY(58%) rotate(4deg);
+  }
+  .spotify-art:hover { transform: translateY(24%) rotate(1.5deg); }
   .about-grid { grid-template-columns: 1fr; }
   .about-copy { padding-right: 0; }
   .resume-col { border-left: 0; border-top: 1px solid var(--line); margin-top: 1.5rem; padding: 1.5rem 0 0; }
@@ -1203,6 +1259,12 @@ h2 {
 
 /* Custom cursor, only when a mouse is present */
 .has-cursor, .has-cursor * { cursor: none !important; }
+.cursor-trail {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+}
 .cursor-dot,
 .cursor-ring {
   position: fixed;
@@ -1217,11 +1279,11 @@ h2 {
 .cursor-dot::before {
   content: "";
   position: absolute;
-  width: 6px;
-  height: 6px;
-  margin: -3px 0 0 -3px;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
   border-radius: 999px;
-  background: var(--copper);
+  background: var(--ink);
   transition: transform 200ms var(--ease);
 }
 .cursor-ring::before {

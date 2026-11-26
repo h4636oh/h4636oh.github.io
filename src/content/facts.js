@@ -2,7 +2,9 @@ export const hero = 'CS student building systems and apps.'
 
 export const github = 'https://github.com/h4636oh'
 
-export const email = 'h4636oh@tuta.io'
+export const email = 'the.pan.shu.4636@gmail.com'
+
+export const spotifyProfile = 'https://open.spotify.com/user/312woejjtlbmn255hengtmmoalna'
 
 export const socials = [
   { id: 'github', label: 'GitHub', note: 'Code and repositories', url: github },
@@ -10,12 +12,7 @@ export const socials = [
   { id: 'leetcode', label: 'LeetCode', note: 'Problem solving', url: 'https://leetcode.com/u/h4636oh' },
   { id: 'mastodon', label: 'Mastodon', note: 'Posts on Fosstodon', url: 'https://fosstodon.org/@h4636oh' },
   { id: 'instagram', label: 'Instagram', note: 'the.pan.shu', url: 'https://instagram.com/the.pan.shu' },
-  {
-    id: 'spotify',
-    label: 'Spotify',
-    note: 'What I listen to',
-    url: 'https://open.spotify.com/user/312woejjtlbmn255hengtmmoalna?si=4df089f9aeb945d3',
-  },
+  { id: 'spotify', label: 'Spotify', note: 'What I listen to', url: spotifyProfile },
 ]
 
 export const about =
